@@ -1,0 +1,173 @@
+<html>
+
+<head>
+    <title>CSCI-610 -- Final Exam</title>
+
+    <!-- include vertex shaders -->
+    <!-- This part here was genereated with the use of AI-->
+
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        #version 300 es
+        in vec3 aVertexPosition;
+        in vec3 aNormal;
+        in vec2 aUV;
+        
+        uniform mat4 uModelMatrix;
+        uniform mat4 uViewMatrix;
+        uniform mat4 uProjectionMatrix;
+        
+        out vec3 vNormal;
+        out vec3 vPosition;
+        out vec2 vUV;
+        
+        void main() {
+            vec4 worldPosition = uModelMatrix * vec4(aVertexPosition, 1.0);
+            vPosition = worldPosition.xyz;
+            vNormal = mat3(uModelMatrix) * aNormal;
+            vUV = aUV;
+            gl_Position = uProjectionMatrix * uViewMatrix * worldPosition;
+        }
+    </script>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">
+         #version 300 es
+         precision mediump float;
+         
+         in vec3 vNormal;
+         in vec3 vPosition;
+         in vec2 vUV;
+         
+         uniform vec3 uLightPosition;
+         uniform vec3 uMaterialDiffuse;
+         uniform vec3 uCameraPosition;
+         uniform sampler2D uTexture;
+         uniform bool uUseTexture;
+         
+         out vec4 fragColor;
+         
+         // New uniforms for detailed lighting control
+         uniform vec3 uAmbientLight;  // Ambient light color/intensity
+         uniform vec3 uLightColor;    // Light source color
+         uniform vec3 uSpecularColor; // Specular highlight color
+         
+         uniform float uKa; // Ambient coefficient
+         uniform float uKd; // Diffuse coefficient
+         uniform float uKs; // Specular coefficient
+         uniform float uShininess; // Shininess
+
+         void main(void) {
+             vec3 normal = normalize(vNormal);
+             vec3 lightDir = normalize(uLightPosition - vPosition);
+             vec3 viewDir = normalize(uCameraPosition - vPosition);
+             vec3 reflectDir = reflect(-lightDir, normal);
+             
+             // Get base color (from texture or material color)
+             vec3 baseColor = uUseTexture ? texture(uTexture, vUV).rgb : uMaterialDiffuse;
+             
+             // Ambient: uKa * uAmbientLight * baseColor
+             // Using baseColor for ambient reflection as standard approximation
+             vec3 ambient = uKa * uAmbientLight * baseColor;
+             
+             // Diffuse: uKd * uLightColor * baseColor * dot(N, L)
+             float diffuseFactor = max(dot(normal, lightDir), 0.0);
+             vec3 diffuse = uKd * uLightColor * baseColor * diffuseFactor;
+             
+             // Specular: uKs * uSpecularColor * uLightColor * pow(dot(R, V), shininess)
+             // Modulating specular by light color is physically correct, but usually spec highlight is light color.
+             float specFactor = pow(max(dot(viewDir, reflectDir), 0.0), uShininess);
+             vec3 specular = uKs * uSpecularColor * uLightColor * specFactor;
+             
+             vec3 color = ambient + diffuse + specular;
+             fragColor = vec4(color, 1.0);
+         }
+     </script>
+
+    <script id="wireframe-V" type="x-shader/x-vertex">
+        #version 300 es
+        in vec3 aVertexPosition;
+        
+        void main()
+        {
+            gl_Position = aVertexPosition;
+        }
+    </script>
+
+    <!-- wireframe fragment Shaders -->
+    <script id="wireframe-F" type="x-shader/x-fragment">
+         #version 300 es
+         precision mediump float;
+         
+         // Color that is the result of this shader
+         out vec4 fragColor;
+
+         void main(void) {
+             fragColor = vec4 (0.5, 0.5, 0.5, 1.0 );
+         }
+
+     </script>
+
+    <!-- Matrix library and code for standard transformations -->
+    <script type="text/javascript" src="gl-matrix-min.js"></script>
+
+    <!-- include the main final functions -->
+    <script type="text/javascript" src="./finalMain.js"></script>
+
+    <!-- shape functions -->
+    <script type="text/javascript" src="./cgIShape.js"></script>
+    <script type="text/javascript" src="./myShapes-min.js"></script>
+
+    <!-- keyboard functions -->
+    <script type="text/javascript" src="./event.js"></script>
+
+    <!-- Texture Data (Base64) -->
+    <script type="text/javascript" src="./texture_data.js"></script>
+
+
+
+    <script type="text/javascript">
+        // Call init once the webpage has loaded
+        window.onload = init;
+    </script>
+</head>
+
+<body>
+    <h1>CSCI-610: Final Exam Image</h1>
+    <table>
+        <tr>
+            <td><canvas id="webgl-canvas" width="500" height="500">
+                    Your browser does not support the HTML5 canvas element.
+                </canvas></td>
+
+            <td>
+                <h3>Controls</h3>
+
+                <table border="1">
+                    <tbody>
+                        <tr>
+                            <td><strong>Arrow Up</strong></td>
+                            <td>Move camera up</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Arrow Down</strong></td>
+                            <td>Move camera down</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Arrow Left</strong></td>
+                            <td>Move camera left</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Arrow Right</strong></td>
+                            <td>Move camera right</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+
+
+</body>
+
+</html>
